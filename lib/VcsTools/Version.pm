@@ -8,7 +8,7 @@ use vars qw(@ISA $VERSION $test);
 use Carp ;
 use AutoLoader qw/AUTOLOAD/ ;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
 
 $test = 0 ;
 
@@ -23,29 +23,42 @@ sub new
 
     $self->{body} = new Puppet::Body(cloth => $self, @_) ;
 
-    my %storeArgs = %{$args{storageArgs}} ;
-    croak "No storeArgs defined for VcsTools::Version $self->{name}\n"
-      unless defined %storeArgs;
+    if (defined $args{storageArgs})
+      {
+        # transition code, should be removed sooner or later
+        my %storeArgs = %{$args{storageArgs}} ;
+        carp "new $type $args{name}: storageArgs is deprecated";
+        carp "new $type $args{name}: usage is deprecated" 
+          if defined $args{usage};
  
-    my $usage = $self->{usage} = $args{usage} || 'File';
-
-    if ($usage eq 'MySql')
-      {
-        $storeArgs{version} = $args{revision};
-        require VcsTools::VerSqlStorage;
-        $self->{storage} = new VcsTools::VerSqlStorage (%storeArgs) ;
+        my $usage = $self->{usage} = $args{usage} || 'File';
+        
+        if ($usage eq 'MySql')
+          {
+            $storeArgs{version} = $args{revision};
+            require VcsTools::VerSqlStorage;
+            $args{storage} = new VcsTools::VerSqlStorage (%storeArgs) ;
+          }
+        else
+          {
+            $args{storage} =  new Puppet::Storage (name => $self->{name},
+                                                     %storeArgs) ;
+          }
+        $self->{storageArgs}=$args{storageArgs};
       }
-    else
-      {
-        $self->{storage} =  new Puppet::Storage (name => $self->{name},
-                                                 %storeArgs) ;
-      }
 
+    if (defined $args{manager})
+      {
+        carp "new $type $args{name}: manager is deprecated";
+        my $mgr = $args{manager} ;
+        $args{getBrotherSub} = sub {$mgr->getVersionObj(@_)} ;
+        $self->{manager}=$args{manager};
+      }
 
     # mandatory parameter
-    foreach (qw/revision manager/)
+    foreach (qw/revision getBrotherSub storage/)
       {
-        die "No $_ passed to $self->{name}\n" unless 
+        die "No $_ passed to $type $self->{name}\n" unless 
           defined $args{$_};
         $self->{$_} = delete $args{$_} ;
       }
@@ -199,7 +212,10 @@ perl(1), Puppet:Body:(3), VcsTools::History(3)
 
 sub getVersionObj
   {
-    shift->{manager}->getVersionObj(@_);
+    my $self = shift ;
+    my $rev = shift ;
+    carp "Version::getVersionObj is deprecated";
+    return $self->{getBrotherSub}->($rev);
   }
 
 sub getLog 
@@ -213,12 +229,50 @@ sub getLog
 sub update
   {
     my $self = shift ;
+    my %args = @_ ; 
+
+    $self->updateInfo(@_);
+    $self->updateRelations(@_) ;
+
+    my $stored_info = $args{info}; # modified by the 2 above functions
+
+    $self->{storage}->storeDbInfo(%$stored_info) ;
+  }
+
+sub updateInfo
+  {
+    my $self = shift ;
+    my %args = @_ ; 
+    my $stored_info = $args{info};
+
+    $self->{body}->printDebug("Updating info on version $self->{revision}\n");
+
+    # must update the info gotten from the log info
+
+    $stored_info->{author} = $stored_info->{writer} unless 
+      defined $stored_info->{author};
+
+    $stored_info->{writer} = $stored_info->{author} unless 
+      defined $stored_info->{writer};
+
+    croak("No author or write specified to $self->{name} update")
+      unless defined $stored_info->{writer} ;
+
+
+    if (defined $stored_info->{log} and $stored_info->{log} !~ /\n$/)
+      {
+        $stored_info->{log}.="\n";
+      }
+
+  }
+
+sub updateRelations
+  {
+    my $self = shift ;
     my %args = @_ ; # array ref of log lines
     my $stored_info = $args{info};
     
-    $self->{body}->printDebug("Updating info on version $self->{revision}\n");
-    # must update the info gotten from the log info
-
+    $self->{body}->printDebug("Updating relations on version $self->{revision}\n");
     # if the upper parameter is specified, then this version object was just
     # created. Depending on this upper parameter we may need to
     # update the 'branch' info of the upper object or create the 'previous'
@@ -228,7 +282,9 @@ sub update
     my $tmp = $self->{revision} ;
     $tmp =~ s/(\d+)$/$1-1/e ; # decrement rev
 
-    my $upperObj = $self->getVersionObj($tmp) ;
+    my %relations ;
+
+    my $upperObj = $self->{getBrotherSub}->($tmp) ;
 
     if (defined $upperObj)
       {
@@ -246,13 +302,14 @@ sub update
           }
         $stored_info->{upper} = $tmp ;
         $upperObj->storage()->storeDbInfo(lower=> $self->{revision}) ;
+        #$relations{$upperObj->getRevision()} = {lower=> $self->{revision}} ;
       }
     elsif (defined $args{upper})
       {
         # we have either a branch or a jump
         my @a = split(/\./,$self->{revision});
         my @b = split(/\./,$args{upper}) ;
-        $upperObj = $self->getVersionObj($args{upper}) ;
+        $upperObj = $self->{getBrotherSub}->($args{upper}) ;
         croak "Major error: Cannot find object for upper revision: $args{upper}\n"
           unless defined $upperObj;
 
@@ -265,16 +322,17 @@ sub update
         else
           {
             # it's a jump
-            $stored_info->{previous}=$args{upper} ;
+            # previous is explicitely written in HMS, while it is ignored
+            # in Mysql
+            $stored_info->{upper} = $stored_info->{previous} = $args{upper} ;
             $upperObj->storage()->storeDbInfo(lower=> $self->{revision}) ;
           }
-        
       }
     elsif (defined $stored_info->{previous})
       {
         # only during the scan of the history log
 
-        $upperObj = $self->getVersionObj($stored_info->{previous}) ;
+        $upperObj = $self->{getBrotherSub}->($stored_info->{previous}) ;
         die "Major problem: $self->{name} version $self->{revision} has a ",
         "non-existent previous version $stored_info->{previous}\n"
           unless defined $upperObj ;
@@ -284,7 +342,7 @@ sub update
 
     if (defined $stored_info->{mergedFrom})
       {
-        my $otherObj = $self->getVersionObj($stored_info->{mergedFrom}) ;
+        my $otherObj = $self->{getBrotherSub}->($stored_info->{mergedFrom}) ;
 
         die "Non existant version $stored_info->{mergedFrom} in mergedFrom field\n"
           unless defined $otherObj ;
@@ -297,7 +355,7 @@ sub update
         # update the upper revision of each branched object
         foreach my $b (@{$stored_info->{branches}})
           {
-            my $obj = $self->getVersionObj($b) ;
+            my $obj = $self->{getBrotherSub}->($b) ;
             if (defined $obj)
               {
                 $obj ->storage()-> storeDbInfo (upper => $self->{revision}) ;
@@ -309,12 +367,6 @@ sub update
           }
       }
 
-    if (defined $stored_info->{log} and $stored_info->{log} !~ /\n$/)
-      {
-        $stored_info->{log}.="\n";
-      }
-
-    $self->{storage}->storeDbInfo(%$stored_info) ;
   }
 
 # internal
@@ -368,7 +420,7 @@ sub findOldest
     my $upper = $self->{storage}->getDbInfo('upper') ;
     if (defined $upper)
       {
-        return $self->{manager}->getVersionObj($upper) ->findOldest();
+        return $self->{getBrotherSub}->($upper) ->findOldest();
       }
     else
       {
@@ -405,7 +457,7 @@ sub findAncestor
     my $upper = $self->{storage}->getDbInfo('upper') ;
     if (defined $upper)
       {
-        my $obj = $self->getVersionObj( $upper);
+        my $obj = $self->{getBrotherSub}->( $upper);
         if ($obj->isAncestorUp($done, $other,\$top))
           {
             print("Found ancestor $top\n") if $test;
@@ -442,7 +494,7 @@ sub isAncestorUp
         $$topRef = $rev ;
         foreach my $branch ( @$branches )
           {
-            return 1 if $self->{manager} -> getVersionObj($branch)
+            return 1 if $self->{getBrotherSub}->($branch)
               ->isOtherRevDown($done,$other) ;
           }
       }
@@ -451,7 +503,7 @@ sub isAncestorUp
     # follow main branch if we come from branch
     if (defined $lower)
       {
-        return 1 if $self->{manager} -> getVersionObj($lower) 
+        return 1 if $self->{getBrotherSub}->($lower) 
           ->isOtherRevDown($done,$other);
       }
 
@@ -459,8 +511,7 @@ sub isAncestorUp
     my $upper = $self->{storage}->getDbInfo('upper');
     if (defined $upper)
       {
-        return $self->{manager} 
-          ->getVersionObj($upper)
+        return $self->{getBrotherSub}->($upper)
           ->isAncestorUp($done,$other,$topRef);
       }
     else
@@ -494,7 +545,7 @@ sub isOtherRevDown
       {
         foreach my $branch ( @$branches )
           {
-            return 1 if $self->getVersionObj($branch)
+            return 1 if $self->{getBrotherSub}->($branch)
               ->isOtherRevDown($done,$other) ;
           }
       }
@@ -503,7 +554,7 @@ sub isOtherRevDown
     my $lower = $self->{storage}->getDbInfo('lower') ;
     if (defined $lower)
       {
-        return $self->getVersionObj($lower) ->isOtherRevDown($done,$other);
+        return $self->{getBrotherSub}->($lower) ->isOtherRevDown($done,$other);
       }
     else
       {
@@ -533,7 +584,7 @@ sub findChildren
       {
         foreach my $branch ( @$stuff )
           {
-            $self->getVersionObj($branch) ->findChildren($hash, $level) ;
+            $self->{getBrotherSub}->($branch) ->findChildren($hash, $level) ;
           }
       }
     
@@ -542,7 +593,7 @@ sub findChildren
       {
         foreach my $branch ( @$stuff )
           {
-            $self->getVersionObj($branch) ->findChildren($hash, $level) ;
+            $self->{getBrotherSub}->($branch) ->findChildren($hash, $level) ;
           }
       }
 
@@ -550,7 +601,7 @@ sub findChildren
     my $lower = $self->{storage}->getDbInfo('lower');
     if (defined $lower)
       {
-        $self->getVersionObj($lower) ->findChildren($hash,$level) ;
+        $self->{getBrotherSub}->($lower) ->findChildren($hash,$level) ;
       }
 
     return sort keys %$hash ;

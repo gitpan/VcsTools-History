@@ -8,7 +8,7 @@ require Exporter;
 
 @EXPORT_OK = qw($description readHook);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 # $logDataFormat is a array ref which specifies all information that can
 # edited or displayed on the history editor.
@@ -45,7 +45,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
       'mode' => 'h' 
      },
      { 
-      'name' => 'Author', 
+      'name' => 'author', 
       'type' => 'line', 
       'vcs_mode' => 'r',
       'mode' => 'r' 
@@ -142,9 +142,9 @@ according to the level of confidence.
 Taken from 'branches' RCS field. List the branches of a version.
 read-only value.
 
-=head2 Author
+=head2 author
 
-Taken from 'Author' RCS field. Name of the author of the revision or
+Taken from 'author' RCS field. Name of the author of the revision or
 the name of the last guy who modified the RCS log.
 
 =head2 date

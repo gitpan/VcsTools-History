@@ -8,7 +8,7 @@ require Exporter;
 
 @EXPORT_OK = qw($description readHook);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 # $logDataFormat is a array ref which specifies all information that can
 # edited or displayed on the history editor.
@@ -48,6 +48,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
      },
      { 
       'name' => 'Author', 
+      'var' => 'author',
       'type' => 'line', 
       'vcs_mode' => 'r',
       'mode' => 'r' 
@@ -187,7 +188,7 @@ Special or Product according to the level of confidence.
 Taken from 'branches' HMS field. List the branches of a version.
 read-only value.
 
-=head2 Author
+=head2 author
 
 Taken from 'Author' HMS field. Name of the author of the revision or
 the name of the last guy who modified the HMS log.
@@ -289,10 +290,10 @@ sub readHook
     foreach my $rev (keys %$info)
       {
         # set writer as author by default of previous version
-        if (defined $info->{$rev}{Author} and 
+        if (defined $info->{$rev}{author} and 
             not defined $info->{$rev}{writer})
           {
-            $info->{$rev}{writer} = $info->{$rev}{Author};
+            $info->{$rev}{writer} = $info->{$rev}{author};
           }
 
         &guessKeywords($info,$rev) unless defined $info->{$rev}{keywords} ;

@@ -44,7 +44,7 @@ $VAR1 = {
                          'state' => 'Exp',
                          'log' => 'dummy branch 1
 ',
-                         'Author' => 'rgachet @ somewhere',
+                         'author' => 'rgachet @ somewhere',
                          'writer' => 'rgachet @ somewhere',
                          'date' => '1998/03/04 17:04:22'
                        },
@@ -52,7 +52,7 @@ $VAR1 = {
                          'state' => 'Exp',
                          'log' => 'dummy branch 1
 ',
-                         'Author' => 'rgachet @ somewhere',
+                         'author' => 'rgachet @ somewhere',
                          'writer' => 'rgachet @ somewhere',
                          'date' => '1998/03/04 17:04:22'
                        },
@@ -62,7 +62,7 @@ $VAR1 = {
 
  - GREhp12347   :  Prepare source module for NT
 ',
-                     'Author' => 'rgachet @ somewhere',
+                     'author' => 'rgachet @ somewhere',
                      'branches' => [
                                      '5.0.1.1',
                                      '5.0.2.1'
@@ -90,7 +90,7 @@ bugs fixed :
 
 Did fix GREhp12065 (dummy uh)
 ',
-                      'Author' => 'herve',
+                      'author' => 'herve',
                       'writer' => 'herve',
                       'date' => '1998/02/06 14:24:09',
                       'fix' => [

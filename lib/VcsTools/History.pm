@@ -11,7 +11,7 @@ use vars qw($VERSION);
 
 use AutoLoader qw/AUTOLOAD/ ;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.8 $ =~ /(\d+)\.(\d+)/;
 
 sub new
   {
@@ -23,35 +23,45 @@ sub new
 
     $self->{body} = new Puppet::Body(cloth => $self, @_) ;
 
-    my %storeArgs = %{$args{storageArgs}} ;
-    
-    croak "No storageArgs defined for VcsTools::History $self->{name}\n"
-      unless defined %storeArgs;
-
-    $self->{storageArgs} = \%storeArgs;
-
     my $usage = $self->{usage} = $args{usage} || 'File' ;
-    if ($usage eq 'MySql')
+    #carp "new $type $args{name}: usage is deprecated" 
+    #  if defined $args{usage};
+
+    # we can't deprecate usage until the version list problem is
+    # sorted.  version list is stored in the DB_file, while the SQL
+    # interface rebuilds it. This leads to 2 different behaviors,
+    # hence the usage parameter.  The solution could be to re-build
+    # the version list from the keys of the DB_File even though this
+    # is not efficient.
+
+    # then again ,there's the problem of the historyUpdateTime ...
+
+    if (defined $args{storageArgs})
       {
-        require VcsTools::HistSqlStorage;
-        $self->{storage} = new VcsTools::HistSqlStorage (%storeArgs) ;
-      }
-    else
-      {
-        $self->{storage} =  new Puppet::Storage (name => $self->{name},
-                                                 %storeArgs) ;
+        # transition code, should be removed sooner or later
+        my %storeArgs = %{$args{storageArgs}} ;
+        carp "new $type $args{name}: storageArgs is deprecated";
+        if ($usage eq 'MySql')
+          {
+            require VcsTools::HistSqlStorage;
+            $args{storage} = new VcsTools::HistSqlStorage (%storeArgs) ;
+          }
+        else
+          {
+            $args{storage} =  new Puppet::Storage (name => $self->{name},
+                                                   %storeArgs) ;
+          }
+        $self->{storageArgs}=$args{storageArgs};
       }
 
     # mandatory parameter
-    foreach (qw/name dataScanner/)
+    foreach (qw/name dataScanner storage/)
       {
         croak "No $_ passed to $self->{name}\n" unless 
           defined $args{$_};
         $self->{$_} = delete $args{$_} ;
       }
 
-    # modify the key root for all the version objects
-    $self->{storageArgs}{keyRoot} .= ' '.$self->{name} ;
     bless $self,$type ;
   }
 
@@ -353,10 +363,23 @@ sub update
          @version) ;
     
     # first, create all version object and store relevant info in it
-    map ($self->getVersionObj($_),@version) ;
+    my @versionObjs = map ($self->getVersionObj($_),@version) ;
 
     # and update the info in there
-    map ($self->getVersionObj($_)->update(info => $hash->{$_}),@version) ;
+    foreach my $obj (@versionObjs)
+      {
+        my $v = $obj -> getRevision();
+        $obj->updateInfo(info => $hash->{$v});
+        $obj->storage()->storeDbInfo(%{$hash->{$v}}) ;
+      }
+
+    # this should be optimized since a lot of storeDbInfo will be fired
+    foreach my $obj (@versionObjs)
+      {
+        my $v = $obj -> getRevision();
+        $obj->updateRelations(info => $hash->{$v});
+        $obj->storage()->storeDbInfo(%{$hash->{$v}}) ;
+      }
 
     # verify if all (minus 1) versions have a parent ...
     my @orphan =();
@@ -574,6 +597,7 @@ sub getVersionObj
 
     unless (defined $self->{version})
       {
+        # this call is handled specially by HistSqlStorage
         my $ref = $self->{storage}->getDbInfo('versionList') ;
         my @list = ref($ref) ? @$ref : () ;
         map( $self->{version}{$_} = 1,@list);
@@ -597,15 +621,21 @@ sub createVersionObj
     my $rev = shift ;
 
     $self->{body}->printDebug("Creating version object for rev $rev\n");
-    
+
+    my @store = defined $self->{storageArgs} ? 
+      (storageArgs => $self->{storageArgs}) :
+      (storage => $self->{storage} -> child(name => $rev)) ;
+
     return new VcsTools::Version  
       (
        name => $rev,
        title => "$self->{name} v$rev",
-       storageArgs => $self->{storageArgs},
+       @store,
        trace => $self->{trace},
        usage => $self->{usage},
-       manager => $self,
+       # this closure could be improved for performance with a cache
+       # but the cleanup of cached versions object can be a problem
+       getBrotherSub => sub{$self->getVersionObj(@_);},
        revision => $rev
       ) ;
   }

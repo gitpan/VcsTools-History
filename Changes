@@ -1,3 +1,23 @@
+1999-10-11  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
+
+	* lib/VcsTools/History.pm: 
+	- split call to Version::update into calls to Version::updateInfo and
+	Version::updateRelations
+	- adapted for translucent attriubtes of Storage
+	- storageArgs deprecated
+
+	* VcsTools/Version.pm: 
+	- split update into updateInfo and updateRelations
+	- added a check in update for writer and author
+	- fixed bug with previous and upper
+	- adapted for translucent attributes of Storage
+	- removed manager ref
+	- call to manager's getVersionObj replaced by a call to a closure.
+
+	* VcsTools/DataSpec/Rcs.pm:changed Author to author 
+
+	* VcsTools/DataSpec/HpTnd.pm: changed Author to author
+
 1999-08-20  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
 
 	* lib/VcsTools/LogParser.pm (scanHistory):

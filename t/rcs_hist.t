@@ -46,13 +46,12 @@ my $ds = new VcsTools::LogParser
 
 print "ok ",$idx++,"\n";
 
+Puppet::Storage->dbHash(\%dbhash);
+Puppet::Storage->keyRoot('history root');
+
 my $hist = new VcsTools::History 
   (
-   storageArgs => 
-   {
-    dbHash => \%dbhash,
-    keyRoot => 'history root'
-    },
+   storage => new Puppet::Storage(name => 'History test') ,
    name => 'History test',
    how => $trace ? 'print' : undef,
    dataScanner => $ds

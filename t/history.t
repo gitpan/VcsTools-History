@@ -47,13 +47,12 @@ my $ds = new VcsTools::LogParser
 
 print "ok ",$idx++,"\n";
 
+Puppet::Storage->dbHash(\%dbhash);
+Puppet::Storage->keyRoot('history root');
+
 my $hist = new VcsTools::History 
   (
-   storageArgs => 
-   {
-    dbHash => \%dbhash,
-    keyRoot => 'history root'
-    },
+   storage => new Puppet::Storage(name => 'History test') ,
    name => 'History test',
    how => $trace ? 'print' : undef,
    dataScanner => $ds 
@@ -118,7 +117,7 @@ my $ref = $hist->buildCumulatedInfo('3.3','3.0');
 print "not " unless $ref->{log} eq $resStr;
 print "ok ",$idx++,"\n";
 
-my %info = (log => 'nothing at all');
+my %info = (log => 'nothing at all', author => 'bibi');
 my $obj = $hist->addNewVersion(revision => '3.20',
                                info => \%info, after => '3.19');
 print "not " unless $hist->hasVersion('3.20');
