@@ -11,7 +11,7 @@ use vars qw($VERSION);
 
 use AutoLoader qw/AUTOLOAD/ ;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 sub new
   {
@@ -19,6 +19,7 @@ sub new
     my %args = @_ ;
 
     my $self = {};
+    $self->{name}=$args{name};
 
     $self->{body} = new Puppet::Body(cloth => $self, @_) ;
 
@@ -37,7 +38,8 @@ sub new
       }
     else
       {
-        $self->{storage} =  new Puppet::Storage (%storeArgs) ;
+        $self->{storage} =  new Puppet::Storage (name => $self->{name},
+                                                 %storeArgs) ;
       }
 
     # mandatory parameter
@@ -48,6 +50,7 @@ sub new
         $self->{$_} = delete $args{$_} ;
       }
 
+    # modify the key root for all the version objects
     $self->{storageArgs}{keyRoot} .= ' '.$self->{name} ;
     bless $self,$type ;
   }
@@ -234,6 +237,10 @@ Returns a list of all revision between $rev1 and $rev2. Include the youngest
 revision in the list, but not the older.
 
 Croaks if the revision are not parents.
+
+=head2 getInfo($rev)
+
+Returns an info array containing all informations relevant to $rev.
 
 =head2 buildCumulatedInfo($rev1, $rev2)
 
@@ -476,6 +483,15 @@ sub listGenealogy
     return \@result ;
   }
 
+sub getInfo
+  {
+    my $self = shift ;
+
+    my @array = ( );
+    my @keys = $self->{dataScanner}->getKeys() ;
+    return $self->getVersionObj(shift)->storage()->getDbInfo(@keys) ;
+  }
+
 sub buildCumulatedInfo
   {
     my $self = shift ;
@@ -485,10 +501,12 @@ sub buildCumulatedInfo
     
     my @array = ( );
     my @keys = $self->{dataScanner}->getKeys() ;
-    foreach (@{$self->listGenealogy(@_)})
+    foreach my $r (@{$self->listGenealogy(@_)})
       {
-        push @array, [$_, $self->getVersionObj($_)->storage()->getDbInfo(@keys)] ;
+        push @array, 
+        [$r, $self->getVersionObj($r)->storage()->getDbInfo(@keys)] ;
       }
+
     return $self->{dataScanner}->pileLog($self->{name}, \@array);
   }
 

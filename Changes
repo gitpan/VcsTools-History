@@ -1,3 +1,7 @@
+1999-07-23  Dominique Dumont  <domi@barrayar.grenoble.hp.com>
+
+	* v1.002: fix problem with Puppet::Storage
+
 v0.01: Fri Aug 21 12:48:48  1998
 	- original version
 

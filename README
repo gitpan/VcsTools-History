@@ -35,6 +35,9 @@ based systems.
 I'd like people who actually use this module for their application to
 drop me a short note about what they're using this module for. 
 
+Suggested DSLI line:
+
+VcsTools::History bdpO  Perl class to manage a VCS history   DDUMONT
 
 This module was written with perl5.005. 
 

@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile
   (
    'NAME'	   => 'VcsTools-History',
-   'VERSION' => '1.001',
+   'VERSION' => '1.002',
    'dist' => {COMPRESS=>'gzip -9f', SUFFIX => 'gz'},
    ($] >= 5.005 ?
     (ABSTRACT   => 'VCS History management tools',
@@ -12,7 +12,7 @@ WriteMakefile
    'PREREQ_PM' =>
    {
     'Puppet::Body' => '1.013',
-    'Puppet::Storage' => '1.002',
+    'Puppet::Storage' => '1.003',
     'MLDBM' => 0,
     'Time::Local' => 0
    }

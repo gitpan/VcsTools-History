@@ -8,7 +8,7 @@ use vars qw(@ISA $VERSION $test);
 use Carp ;
 use AutoLoader qw/AUTOLOAD/ ;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 
 $test = 0 ;
 
@@ -19,6 +19,7 @@ sub new
     my %args = @_ ;
 
     my $self = {};
+    $self->{name} = $args{name};
 
     $self->{body} = new Puppet::Body(cloth => $self, @_) ;
 
@@ -26,9 +27,6 @@ sub new
     croak "No storeArgs defined for VcsTools::Version $self->{name}\n"
       unless defined %storeArgs;
  
-    #personalization of the key root
-    $storeArgs{keyRoot} .= $args{revision};
-
     my $usage = $self->{usage} = $args{usage} || 'File';
 
     if ($usage eq 'MySql')
@@ -39,7 +37,8 @@ sub new
       }
     else
       {
-        $self->{storage} =  new Puppet::Storage (%storeArgs) ;
+        $self->{storage} =  new Puppet::Storage (name => $self->{name},
+                                                 %storeArgs) ;
       }
 
 
@@ -183,7 +182,7 @@ can find.
 =head1  getLog()
 
 Returns the log of this version object.
- 
+
 =head1 AUTHOR
 
 Dominique Dumont, Dominique_Dumont@grenoble.hp.com
@@ -200,8 +199,7 @@ perl(1), Puppet:Body:(3), VcsTools::History(3)
 
 sub getVersionObj
   {
-    my $self = shift ;
-    $self->{manager}->getVersionObj(@_);
+    shift->{manager}->getVersionObj(@_);
   }
 
 sub getLog 
