@@ -6,7 +6,7 @@ use Carp;
 use vars qw($VERSION) ;
 use AutoLoader qw/AUTOLOAD/ ;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 # must pass the info data structure when creating it
 sub new
@@ -267,7 +267,7 @@ sub scanHistory
           next ;
         }
 
-      if (not defined $revision and $line =~ /^revision\s*([\d.]+)\s*$/) 
+      if (not defined $revision and $line =~ /^revision\s*([\d.]+)/) 
         {
           $revision = $1 ; 
           next ;

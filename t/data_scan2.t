@@ -79,13 +79,16 @@ $VAR1 = {
                    },
           '4.14' => {
                       'keywords' => [
-                                      'HPSS7'
+                                      'HPSS7',
+                                      'SCCP_N_COORD'
                                     ],
                       'state' => 'Exp',
                       'log' => 'toto: dummy
 bugs fixed :
 
  - GREhp12065   :  HPSS7 stack killed when application sends a SCCP_N_COORD primitive
+
+Did fix GREhp12065 (dummy uh)
 ',
                       'Author' => 'herve',
                       'writer' => 'herve',
@@ -114,13 +117,16 @@ $str=<<'EOF';
 $VAR1 = {
           'keywords' => [
                           'HPSS7',
-                          'NT'
+                          'NT',
+                          'SCCP_N_COORD'
                         ],
           'log' => 'From test v4.14:
 toto: dummy
 bugs fixed :
 
  - GREhp12065   :  HPSS7 stack killed when application sends a SCCP_N_COORD primitive
+
+Did fix GREhp12065 (dummy uh)
 
 From test v5.0:
 bugs fixed :
@@ -156,13 +162,15 @@ print "ok ",$idx++,"\n";
 
 $str = <<'EOF';
 writer: herve
-keywords: HPSS7
+keywords: HPSS7, SCCP_N_COORD
 fix: GREhp12065
 interface change: cosmetic
 toto: dummy
 bugs fixed :
 
  - GREhp12065   :  HPSS7 stack killed when application sends a SCCP_N_COORD primitive
+
+Did fix GREhp12065 (dummy uh)
 EOF
 
 $res = $ds->buildLogString($info->{'4.14'});
@@ -197,6 +205,8 @@ interface change: cosmetic
 bugs fixed :
 
  - GREhp12065   :  HPSS7 stack killed when application sends a SCCP_N_COORD primitive
+
+Did fix GREhp12065 (dummy uh)
 ----------------------------
 revision 5.0.1.1
 date: 1998/03/04 17:04:22;  author: rgachet;  state: Exp;  lines: +2 -2

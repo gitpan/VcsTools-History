@@ -8,7 +8,7 @@ require Exporter;
 
 @EXPORT_OK = qw($description readHook);
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
 # $logDataFormat is a array ref which specifies all information that can
 # edited or displayed on the history editor.
@@ -325,8 +325,11 @@ sub guessKeywords
   {
     my $info = shift ;
     my $rev = shift ;
+    my %seen = () ;
     
-    my @w = ($info->{$rev}{log} =~ /\b([A-Z\d]{2,})\b/g) ;
+    my @w = grep ( {! /^GREhp/ and ! $seen{$_}++ } 
+                   ($info->{$rev}{log} =~ /\b([A-Z_\d]{2,})\b/g) ) ;
+    
     $info->{$rev}{keywords}= \@w if scalar @w > 0;
   }
 
@@ -334,7 +337,8 @@ sub guessFix
   {
     my $info = shift ;
     my $rev = shift ;
-    my @f = ($info->{$rev}{log} =~ /(GREhp\d+)/g) ;
+    my %seen = () ;
+    my @f = grep {! $seen{$_} ++} sort ($info->{$rev}{log} =~ /(GREhp\d+)/g) ;
     $info->{$rev}{fix}= \@f if scalar @f > 0;
   }
 

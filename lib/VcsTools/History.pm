@@ -11,7 +11,7 @@ use vars qw($VERSION);
 
 use AutoLoader qw/AUTOLOAD/ ;
 
-$VERSION = sprintf "%d.%03d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%03d", q$Revision: 1.5 $ =~ /(\d+)\.(\d+)/;
 
 sub new
   {
@@ -399,7 +399,7 @@ sub guessNewRev
         $newRev = $rev . '.1.1' ;
         while ($self->hasVersion($newRev))
           {
-            $newRev =~ s/(\d)+(\.\d+)$/($1+1).$2/e ;
+            $newRev =~ s/(\d+)(\.\d+)$/($1+1).$2/e ;
           }
       }
     return $newRev ;
@@ -603,6 +603,7 @@ sub createVersionObj
        name => $rev,
        title => "$self->{name} v$rev",
        storageArgs => $self->{storageArgs},
+       trace => $self->{trace},
        usage => $self->{usage},
        manager => $self,
        revision => $rev
