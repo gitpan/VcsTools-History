@@ -1,0 +1,69 @@
+This package contains functions to extract informations from the
+history of a VCS file.
+
+Generally, RCS based systems such as VCS or HMS store a few
+information with each revision. These information are generally
+'Author', 'date', 'branches', 'log'. On top of the common
+informations, you can specify your own set of information (for
+instance, 'merged from', 'bug fixed') according to the policies
+defined on your work place.
+
+You can perform various queries related to the history such as :
+
+* Sort revisions: it will return a pair of revisions sorted by
+age. Oldest and child. But it will return an error if these two
+versions are not parents of each others.
+
+* List a genealogy of versions between 2 revisions of a file. This will
+take into account the branches. For instance between 1.1 and 1.2.1.2,
+it will return 1.1 1.2 1.2.1.1 1.2.1.2), but between 1.3 and 1.2.1.2
+it will return an error, since these two versions are not parents of
+each others.
+
+* Build a cumulated log of several revisions. I.e a log description of
+all changes made to several consecutive versions (which is handy to
+build a log of a merge). This function will return an if these two
+versions are not parents of each others.
+
+Furthermore, this class can be used with a GUI by using
+Puppet::VcsTools::History.
+
+
+This package was tested with HMS and RCS. It should work for all RCS
+based systems.
+
+I'd like people who actually use this module for their application to
+drop me a short note about what they're using this module for. 
+
+
+This module was written with perl5.005. 
+
+See the embedded documentation in the module for more details.
+
+Comments and suggestions are always welcome.
+
+Note that this module is in beta state. Its interface may change (but
+I hope not).
+
+Legal mumbo jumbo:
+
+ Copyright (c) 1998-1999 Dominique Dumont. All rights reserved.
+ This program is free software; you can redistribute it and/or
+ modify it under the same terms as Perl itself.
+ THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR
+ IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ 
+
+ - Dominique Dumont
+   dominique_dumont@grenoble.hp.com
+
+---------------------------------------------------------------------
+INSTALLATION
+
+   	 gunzip -c <dist_file>.tar.gz | tar xvf -
+   	 cd <dist_directory>
+   	 perl Makefile.PL
+   	 make test          
+   	 make install
+
